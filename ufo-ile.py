@@ -42,5 +42,3 @@ lds = predictor.leaderboard()
 print(lds)
 
 
-
-#TODO: create and train a model
