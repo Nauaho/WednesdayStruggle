@@ -1,29 +1,24 @@
-from autogluon.tabular import TabularPredictor, TabularDataset
-from datetime import date
+from autogluon.tabular import TabularPredictor
 import pandas as pd
 
 predictor = TabularPredictor.load("AutogluonModels/ag-20241022_165723")
-                                                        # Check with:
+                                                        # Example data:
 latitude = float(input('Enter latitude: '))             # 47
 longitude = float(input('Enter longitude: '))           # -123
 country = str(input('Enter country: '))                 # us
-observation_month = int(input('Select Month: '))        # 10
-observation_month_day = int(input('Select Day: '))      # 22
+observation_date = str(input('Input date: '))           # 10/23/2024
 
-observation_date = date(2024, observation_month, observation_month_day)
 for_prediction = {
     "datetime": observation_date,
     "country": country,
-    "latitude": latitude,
-    "longitude": longitude
+    "latitude": [latitude],
+    "longitude": [longitude]
 }
-#TODO fix this :/
+
 for_prediction = pd.DataFrame(for_prediction)
-result_seconds = predictor.predict(for_prediction)
+print(f"Predicting on: \n{for_prediction}")
 
-print(f"Predicted duration is {result_seconds} seconds.")
+result_seconds_pdSeries = predictor.predict(for_prediction)
+print(f"Predicted duration is {result_seconds_pdSeries.values[0]:.2f} seconds.")
 
-#('float', []): 2                 | ['latitude', 'longitude']
-#('object', []): 1                | ['country']
-#('object', ['datetime_as_object']): 1 | ['datetime']
-
+# Recommend launching this script with -i switch like "python3 -i console_app.py" to keep the interpreter context.
