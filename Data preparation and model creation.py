@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from autogluon.tabular import TabularPredictor, TabularDataset # pip install autogluon --no-deps
@@ -10,8 +11,8 @@ def data_preparation(dataToGet):
     print(df.shape)
     headersToDrop = ["3. University", "6. Current CGPA", "Anxiety Value", "Stress Value", "Depression Value"]
     df.drop(headersToDrop, axis=1, inplace=True)
-    print(df.head())
-    print(df.shape)
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    df[numeric_columns] = df[numeric_columns].astype('category')
     print("Does data set has any missing data?\n", df.isnull().values.any())
 
     #Podział na oddzielne data sety
@@ -71,20 +72,40 @@ def data_preparation(dataToGet):
         return dfStress
 
 
+def model(predictedLabel, df, savePath):
+    print("Predicting:", predictedLabel)
+    trainData, testData = train_test_split(df, test_size=0.3, random_state=42)
+    trainDataTabular = TabularDataset(trainData)
+    print(trainDataTabular.head())
+    print(trainData[predictedLabel].describe())
+
+    predictor = TabularPredictor(label=predictedLabel, path=savePath).fit(trainDataTabular, presets='medium_quality')
+    predictor.predict(TabularDataset(testData))
+
+    lds = predictor.leaderboard(testData)
+    print(lds)
+    print(predictor.evaluate(testData))
+
+
 def anxiety_model():
     dfAnxiety = data_preparation("Anxiety")
-    trainData, testData = train_test_split(dfAnxiety, test_size=0.3, random_state=42)
-    train_data = TabularDataset(trainData)
-    train_data.head()
+    predictedLabel = "Anxiety Label"
+    model(predictedLabel, dfAnxiety, "AutogluonModels/Anxiety")
 
 
 def depression_model():
     dfDepression = data_preparation("Depression")
+    predictedLabel = "Depression Label"
+    model(predictedLabel, dfDepression, "AutogluonModels/Depression")
 
 
 def stress_model():
     dfStress = data_preparation("Stress")
+    predictedLabel = "Stress Label"
+    model(predictedLabel, dfStress, "AutogluonModels/Stress")
 
 
 if __name__ == "__main__":
     anxiety_model()
+    depression_model()
+    stress_model()

@@ -1,3 +1,4 @@
 autogluon
 pandas
 scikit-learn
+numpy
