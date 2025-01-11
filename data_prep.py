@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 def data_preparation(dataToGet):
     # Analiza i małe zmiany
     df = pd.read_csv('Raw data.csv')
