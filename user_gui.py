@@ -1,62 +1,6 @@
 import streamlit as st
-
-# import requests
-
-
-if "active_page" not in st.session_state:
-    st.session_state.active_page = "Tests"
-if "result" not in st.session_state:
-    st.session_state.result = None
-
-
-def get_results():
-    st.success("Yippieeeeeeeeeeee")
-
-    # logic code
-    # requests.post(
-    #     "ml-api-link", data={general_answ, anxiety_answ, stress_answ, depression_answ}
-    # )
-    # <data parsing>
-
-    # gui code
-    st.session_state.active_page = "Results"
-    st.session_state.result = {"result": "You have beeen GNOOOOOOOOOOOOMED"}
-    st.rerun()
-
-
-@st.dialog("Are you sure?")
-def confirmation_modal():
-    st.write("Do you want to proceed?")
-    if (
-        None in anxiety_answ.values()
-        and None in depression_answ.values()
-        and None in stress_answ.values()
-    ):
-        st.error(
-            "You didn't complete any test! Fill out at least one, so we could analize your state"
-        )
-    else:
-        if None in anxiety_answ.values():
-            st.info(
-                "You didn't complete Anxiety test.\n Make sure you filled all questions if you want to know your results."
-            )
-        if None in stress_answ.values():
-            st.info(
-                "You didn't complete Stress test.\n Make sure you filled all questions if you want to know your results."
-            )
-        if None in depression_answ.values():
-            st.info(
-                "You didn't complete Depression test.\n Make sure you filled all questions if you want to know your results."
-            )
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Yes"):
-                get_results()
-                st.stop()
-        with col2:
-            if st.button("No"):
-                st.rerun()
-
+import pandas as pd
+from autogluon.tabular import TabularPredictor
 
 question_dict = {
     "anx": {
@@ -102,8 +46,6 @@ anxiety_answ = {
     "anx_q6": None,
     "anx_q7": None,
 }
-
-
 stress_answ = {
     "str_q1": None,
     "str_q2": None,
@@ -116,7 +58,6 @@ stress_answ = {
     "str_q9": None,
     "str_q10": None,
 }
-
 depression_answ = {
     "dep_q1": None,
     "dep_q2": None,
@@ -131,8 +72,78 @@ depression_answ = {
 
 regularity_dict = {0: "Rarely", 1: "Sometimes", 2: "Usually", 3: "Often"}
 
+
+
+if "active_page" not in st.session_state:
+    st.session_state.active_page = "Tests"
+if "result" not in st.session_state:
+    st.session_state.result = None
+
+
+def get_results():
+    models = {
+        "Anxiety": TabularPredictor.load("./AutogluonModels/Anxiety"),
+        "Depression": TabularPredictor.load("./AutogluonModels/Depression"),
+        "Stress": TabularPredictor.load("./AutogluonModels/Stress"),
+    }
+
+    results = [
+        models["Anxiety"].predict(pd.DataFrame(anxiety_answ, index=[0])),
+        models["Depression"].predict(pd.DataFrame(depression_answ, index=[0])),
+        models["Stress"].predict(pd.DataFrame(stress_answ, index=[0]))
+    ]
+
+    st.info("results: {}".format(results[0].values))
+    st.info("results: {}".format(results[1].values))
+    st.info("results: {}".format(results[2].values))
+
+
+    st.session_state.active_page = "Results"
+    st.session_state.result = results
+
+
+info_string = "You didn't complete {} test.\n Make sure you filled all questions if you want to know your results."
+@st.dialog("Are you sure?")
+def confirmation_modal():
+    st.write("Do you want to proceed?")
+    if (
+        None in anxiety_answ.values()
+        and None in depression_answ.values()
+        and None in stress_answ.values()
+    ):
+        st.error(
+            "You didn't complete any test! Fill out at least one, so we could analize your state"
+        )
+    else:
+        if None in anxiety_answ.values():
+            st.info(
+                info_string.format("Anxiety")
+            )
+        if None in stress_answ.values():
+            st.info(
+                info_string.format("Stress")
+            )
+        if None in depression_answ.values():
+            st.info(
+                info_string.format("Depression")
+            )
+
+            # Confirmation control
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Yes"):
+                get_results()
+        with col2:
+            if st.button("No"):
+                st.rerun()
+
+if "error" in st.session_state:
+    st.error("Something went wrong. Restarting..")
+    st.session_state.error = None
+
 if st.session_state.active_page == "Tests":
     tab1, tab2, tab3 = st.tabs(["Anxiety Test", "Stress Test", "Depression Test"])
+    st.info(st.session_state)
     with tab1:
         for key in question_dict["anx"]:
             anxiety_answ[key] = st.radio(
@@ -165,6 +176,10 @@ if st.session_state.active_page == "Tests":
             st.button("Send answers", on_click=confirmation_modal, key="depr_send")
 
 elif st.session_state.active_page == "Results":
-    st.write(st.session_state.result)
+    st.subheader("Results")
+    for index, _ in enumerate(["Anxiety", "Stress", "Depression"]):
+        st.write(_ + ": {}".format(st.session_state.results[index]))
 else:
-    st.error("I admit: you strong. How did you end up here?")
+    st.session_state.error = "true"
+    st.session_state.active_page = "Tests"
+    st.rerun()
