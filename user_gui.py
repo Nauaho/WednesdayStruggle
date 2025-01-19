@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from autogluon.tabular import TabularPredictor
+import time
 
 question_dict = {
     "anx": {
@@ -73,7 +74,6 @@ depression_answ = {
 regularity_dict = {0: "Rarely", 1: "Sometimes", 2: "Usually", 3: "Often"}
 
 
-
 if "active_page" not in st.session_state:
     st.session_state.active_page = "Tests"
 if "result" not in st.session_state:
@@ -81,28 +81,31 @@ if "result" not in st.session_state:
 
 
 def get_results():
-    models = {
-        "Anxiety": TabularPredictor.load("./AutogluonModels/Anxiety"),
-        "Depression": TabularPredictor.load("./AutogluonModels/Depression"),
-        "Stress": TabularPredictor.load("./AutogluonModels/Stress"),
-    }
+    with st.spinner('Dusting off books...'):
+        models = {
+            "Anxiety": TabularPredictor.load("./AutogluonModels/Anxiety"),
+            "Stress": TabularPredictor.load("./AutogluonModels/Stress"),
+            "Depression": TabularPredictor.load("./AutogluonModels/Depression")
+        }
 
-    results = [
-        models["Anxiety"].predict(pd.DataFrame(anxiety_answ, index=[0])),
-        models["Depression"].predict(pd.DataFrame(depression_answ, index=[0])),
-        models["Stress"].predict(pd.DataFrame(stress_answ, index=[0]))
-    ]
+        results = []
+        if None not in anxiety_answ.values():
+            results.append(("Anxiety", models["Anxiety"].predict(pd.DataFrame(anxiety_answ, index=[0]))))
+        if None not in stress_answ.values():
+            results.append(("Stress", models["Stress"].predict(pd.DataFrame(stress_answ, index=[0]))))
+        if None not in depression_answ.values():
+            results.append(("Depression", models["Depression"].predict(pd.DataFrame(depression_answ, index=[0]))))
 
-    st.info("results: {}".format(results[0].values))
-    st.info("results: {}".format(results[1].values))
-    st.info("results: {}".format(results[2].values))
+        st.session_state.active_page = "Results"
+        st.session_state.results = results
+        st.rerun()
 
+def test_restart():
+    for key in st.session_state.keys():
+        del st.session_state[key]
 
-    st.session_state.active_page = "Results"
-    st.session_state.result = results
-
-
-info_string = "You didn't complete {} test.\n Make sure you filled all questions if you want to know your results."
+info_string = "You didn't complete {} test."
+info_string2 = "Make sure you filled all questions if you want to know your results."
 @st.dialog("Are you sure?")
 def confirmation_modal():
     st.write("Do you want to proceed?")
@@ -127,6 +130,7 @@ def confirmation_modal():
             st.info(
                 info_string.format("Depression")
             )
+        st.write(info_string2)
 
             # Confirmation control
         col1, col2 = st.columns(2)
@@ -142,43 +146,46 @@ if "error" in st.session_state:
     st.session_state.error = None
 
 if st.session_state.active_page == "Tests":
-    tab1, tab2, tab3 = st.tabs(["Anxiety Test", "Stress Test", "Depression Test"])
-    st.info(st.session_state)
-    with tab1:
-        for key in question_dict["anx"]:
-            anxiety_answ[key] = st.radio(
-                question_dict["anx"][key],
-                options=regularity_dict.keys(),
-                format_func=lambda x: regularity_dict[x],
-                index=None,
-            )
-        if None not in anxiety_answ.values():
-            st.button("Send answers", on_click=confirmation_modal, key="anx_send")
-    with tab2:
-        for key in question_dict["str"]:
-            stress_answ[key] = st.radio(
-                question_dict["str"][key],
-                options=regularity_dict.keys(),
-                format_func=lambda x: regularity_dict[x],
-                index=None,
-            )
-        if None not in stress_answ.values():
-            st.button("Send answers", on_click=confirmation_modal, key="stress_send")
-    with tab3:
-        for key in question_dict["dep"]:
-            depression_answ[key] = st.radio(
-                question_dict["dep"][key],
-                options=regularity_dict.keys(),
-                format_func=lambda x: regularity_dict[x],
-                index=None,
-            )
-        if None not in depression_answ.values():
-            st.button("Send answers", on_click=confirmation_modal, key="depr_send")
+    with st.container(border=True):
+        tab1, tab2, tab3 = st.tabs(["Anxiety Test", "Stress Test", "Depression Test"])
+        with tab1:
+            for key in question_dict["anx"]:
+                anxiety_answ[key] = st.radio(
+                    question_dict["anx"][key],
+                    options=regularity_dict.keys(),
+                    format_func=lambda x: regularity_dict[x],
+                    index=None,
+                )
+            if None not in anxiety_answ.values():
+                st.button("Send answers", on_click=confirmation_modal, key="anx_send")
+        with tab2:
+            for key in question_dict["str"]:
+                stress_answ[key] = st.radio(
+                    question_dict["str"][key],
+                    options=regularity_dict.keys(),
+                    format_func=lambda x: regularity_dict[x],
+                    index=None,
+                )
+            if None not in stress_answ.values():
+                st.button("Send answers", on_click=confirmation_modal, key="stress_send")
+        with tab3:
+            for key in question_dict["dep"]:
+                depression_answ[key] = st.radio(
+                    question_dict["dep"][key],
+                    options=regularity_dict.keys(),
+                    format_func=lambda x: regularity_dict[x],
+                    index=None,
+                )
+            if None not in depression_answ.values():
+                st.button("Send answers", on_click=confirmation_modal, key="depr_send")
 
 elif st.session_state.active_page == "Results":
     st.subheader("Results")
-    for index, _ in enumerate(["Anxiety", "Stress", "Depression"]):
-        st.write(_ + ": {}".format(st.session_state.results[index]))
+    for index, _ in enumerate(st.session_state.results):
+        st.write(_[0] + ": {}".format(st.session_state.results[index][1].values[0]))
+
+    st.info("To re-take the test please refresh this page, or click below.")
+    st.button("Restart", on_click=test_restart)
 else:
     st.session_state.error = "true"
     st.session_state.active_page = "Tests"
