@@ -53,15 +53,15 @@ def data_preparation(dataToGet):
     # Podział na oddzielne data sety
     print(df.columns.tolist())
     dfAnxiety = df[[
-        'age', 'gender', 'department', 'academic_year', 'scholarship', 'anx_q1', 'anx_q2', 'anx_q3', 'anx_q4', 'anx_q5',
+        'anx_q1', 'anx_q2', 'anx_q3', 'anx_q4', 'anx_q5',
         'anx_q6', 'anx_q7', 'anxiety_label']]
 
     dfStress = df[[
-        'age', 'gender', 'department', 'academic_year', 'scholarship', 'str_q1', 'str_q2', 'str_q3', 'str_q4', 'str_q5',
+        'str_q1', 'str_q2', 'str_q3', 'str_q4', 'str_q5',
         'str_q6', 'str_q7', 'str_q8', 'str_q9', 'str_q10', 'stress_label']]
 
     dfDepression = df[[
-        'age', 'gender', 'department', 'academic_year', 'scholarship', 'dep_q1', 'dep_q2', 'dep_q3', 'dep_q4', 'dep_q5',
+        'dep_q1', 'dep_q2', 'dep_q3', 'dep_q4', 'dep_q5',
         'dep_q6', 'dep_q7', 'dep_q8', 'dep_q9', 'depression_label']]
 
     print(dfAnxiety.head())
