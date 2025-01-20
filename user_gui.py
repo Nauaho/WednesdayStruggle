@@ -144,6 +144,7 @@ if "error" in st.session_state:
     st.error("Something went wrong. Restarting..")
     st.session_state.error = None
 
+st.header("Mental health assessment test")
 if st.session_state.active_page == "Tests":
     with st.container(border=True):
         tab1, tab2, tab3 = st.tabs(["Anxiety Test", "Stress Test", "Depression Test"])
@@ -177,14 +178,16 @@ if st.session_state.active_page == "Tests":
                 )
             if None not in depression_answ.values():
                 st.button("Send answers", on_click=confirmation_modal, key="depr_send")
-
+    st.warning("Remember, this is not medical advice and should not be a substitute for professional medical advice or diagnosis.")
 elif st.session_state.active_page == "Results":
     st.subheader("Results")
     for index, _ in enumerate(st.session_state.results):
         st.write(_[0] + ": {}".format(st.session_state.results[index][1].values[0]))
-
+    st.warning(
+        "Remember, this is not medical advice and should not be a substitute for professional medical advice or diagnosis.")
     st.info("To re-take the test please refresh this page, or click below.")
     st.button("Restart", on_click=test_restart)
+
 else:
     st.session_state.error = "true"
     st.session_state.active_page = "Tests"
