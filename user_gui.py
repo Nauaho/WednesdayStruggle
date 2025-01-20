@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from autogluon.tabular import TabularPredictor
-import time
 
 question_dict = {
     "anx": {
